@@ -1,0 +1,35 @@
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+*,
+*::after,
+*::before {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+div#app {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px;
+}
+
+div.click-count {
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+canvas {
+  height: calc(100vh - 120px);
+  width: 100%;
+  border: 2px solid #101010;
+  border-radius: 0.5rem;
+  border: 2px solid black;
+  border-radius: 4px;
+}
