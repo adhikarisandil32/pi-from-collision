@@ -1,6 +1,7 @@
 import { Square } from "./modules/square";
 
-const countNumberElement = document.querySelector("#count-number")!;
+const countNumberElement = document.querySelector("#count-number")! as HTMLSpanElement;
+const startButton = document.querySelector("#click-button")! as HTMLButtonElement;
 
 interface CanvasDetail {
   canvasHeight: number;
@@ -13,6 +14,7 @@ class App {
   public canvasElement: HTMLCanvasElement;
   public canvas2dCtx: CanvasRenderingContext2D;
   public collisionCount: number;
+
   constructor(canvasElement: HTMLCanvasElement) {
     this.canvasElement = canvasElement;
     this.canvas2dCtx = this.canvasElement.getContext("2d")!;
@@ -27,15 +29,17 @@ class App {
       startY: this.canvasElement.height - 50,
       width: 50,
       weight: 1,
+      speed: -2,
     });
     this.largeSquare = new Square({
       startX: Math.floor(this.canvasElement.width / 2),
       startY: this.canvasElement.height - 100,
       width: 100,
-      weight: 100,
+      weight: 10000,
+      speed: -2,
     });
 
-    this.renderLoop();
+    return this;
   }
 
   update() {
@@ -43,19 +47,68 @@ class App {
       throw new Error("small or large square undefined");
     }
 
-    this.smallSquare.startX -= this.smallSquare.startX === 0 ? 0 : 2;
-    this.largeSquare.startX -=
-      this.largeSquare.startX === this.smallSquare.width ? 0 : 1;
+    // detect collision on left wall
+    if (this.smallSquare.startX <= 0) {
+      // console.log("square collided with wall");
+      this.collisionCount += 1;
+      countNumberElement.innerText = this.collisionCount.toString();
+      this.smallSquare.speed *= -1;
+    }
+
+    // detect collision with each other
+    if (this.smallSquare.startX + this.smallSquare.width >= this.largeSquare.startX) {
+      // console.log("squares collided with each other");
+      this.collisionCount += 1;
+      countNumberElement.innerText = this.collisionCount.toString();
+
+      const initialLargeSquareSpeed = this.largeSquare.speed;
+      const initialSmallSquareSpeed = this.smallSquare.speed;
+
+      // new largeSquare speed
+      this.largeSquare.speed =
+        ((this.largeSquare.weight - this.smallSquare.weight) / (this.largeSquare.weight + this.smallSquare.weight)) *
+          initialLargeSquareSpeed +
+        ((2 * this.smallSquare.weight) / (this.largeSquare.weight + this.smallSquare.weight)) * initialSmallSquareSpeed;
+
+      // new smallSquare speed
+      this.smallSquare.speed =
+        ((2 * this.largeSquare.weight) / (this.largeSquare.weight + this.smallSquare.weight)) *
+          initialLargeSquareSpeed +
+        ((this.smallSquare.weight - this.largeSquare.weight) / (this.smallSquare.weight + this.largeSquare.weight)) *
+          initialSmallSquareSpeed;
+
+      console.log({
+        smallSquare: {
+          startX: this.smallSquare.startX,
+          startY: this.smallSquare.startY,
+        },
+        largeSquare: {
+          startX: this.largeSquare.startX,
+          startY: this.largeSquare.startY,
+        },
+      });
+    }
+
+    this.smallSquare.startX += this.smallSquare.startX <= 0 && this.smallSquare.speed < 0 ? 0 : this.smallSquare.speed;
+    this.largeSquare.startX +=
+      this.largeSquare.startX <= this.smallSquare.width && this.largeSquare.speed < 0 ? 0 : this.largeSquare.speed;
+
+    // if (
+    //   this.smallSquare!.speed > this.largeSquare!.speed &&
+    //   this.largeSquare!.startX + this.largeSquare!.width >= this.canvasElement.width
+    // ) {
+    //   // this.extendCanvas();
+    // }
+  }
+
+  extendCanvas() {
+    // this.canvasElement.style.width = `${window.getComputedStyle(this.canvasElement).width.slice(0, -2)}`;
+    this.canvasElement.style.width = "200px";
   }
 
   draw() {
     const appRef = this;
-    appRef.canvas2dCtx.clearRect(
-      0,
-      0,
-      this.canvasElement.width,
-      this.canvasElement.height
-    );
+    appRef.canvas2dCtx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
 
     function drawBoxes() {
       if (!appRef.smallSquare || !appRef.largeSquare) {
@@ -64,29 +117,40 @@ class App {
 
       appRef.canvas2dCtx.strokeStyle = "#080840";
       [appRef.largeSquare, appRef.smallSquare].forEach((square) =>
-        appRef.canvas2dCtx.strokeRect(
-          square.startX,
-          square.startY,
-          square.width,
-          square.height
-        )
+        appRef.canvas2dCtx.strokeRect(square.startX, square.startY, square.width, square.height)
       );
     }
 
     drawBoxes();
   }
 
-  detectCollision() {}
-
   renderLoop() {
-    requestAnimationFrame((timesamp) => {
+    requestAnimationFrame(() => {
       this.update();
       this.draw();
       return this.renderLoop();
     });
   }
+
+  start() {
+    const weight1Elem = document.querySelector("#weight1")! satisfies HTMLSpanElement;
+    const weight2Elem = document.querySelector("#weight2")! satisfies HTMLSpanElement;
+
+    weight1Elem.innerText = new Intl.NumberFormat("en").format(this.largeSquare?.weight ?? 0).toString() + " kg";
+    weight2Elem.innerText = new Intl.NumberFormat("en").format(this.smallSquare?.weight ?? 0).toString() + " kg";
+
+    this.renderLoop();
+  }
 }
 
-new App(
-  document.querySelector("canvas#canvas")! satisfies HTMLCanvasElement
-).init({ canvasHeight: 600, canvasWidth: 1200 });
+const app = new App(document.querySelector("canvas#canvas")! satisfies HTMLCanvasElement).init({
+  canvasHeight: 450,
+  canvasWidth: 800,
+});
+
+startButton.addEventListener("click", () => {
+  app.start();
+  startButton.setAttribute("disabled", "true");
+  startButton.style.opacity = "0.5";
+  startButton.style.cursor = "context-menu";
+});
