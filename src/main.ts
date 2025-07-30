@@ -2,6 +2,7 @@ import { Square } from "./modules/square";
 
 const countNumberElement = document.querySelector("#count-number")! as HTMLSpanElement;
 const startButton = document.querySelector("#click-button")! as HTMLButtonElement;
+const digitsOfPiElem = document.querySelector("#number-of-digits")! as HTMLInputElement;
 
 interface CanvasDetail {
   canvasHeight: number;
@@ -11,9 +12,12 @@ interface CanvasDetail {
 class App {
   public smallSquare: Square | undefined;
   public largeSquare: Square | undefined;
+  public audio: HTMLAudioElement | undefined;
+  public audioPlayButton: HTMLDivElement | undefined;
   public canvasElement: HTMLCanvasElement;
   public canvas2dCtx: CanvasRenderingContext2D;
   public collisionCount: number;
+  public digitsOfPi: number = 2;
 
   constructor(canvasElement: HTMLCanvasElement) {
     this.canvasElement = canvasElement;
@@ -29,15 +33,18 @@ class App {
       startY: this.canvasElement.height - 50,
       width: 50,
       weight: 1,
-      speed: -2,
+      speed: 0,
     });
     this.largeSquare = new Square({
       startX: Math.floor(this.canvasElement.width / 2),
       startY: this.canvasElement.height - 100,
       width: 100,
-      weight: 10000,
+      weight: Math.pow(100, this.digitsOfPi - 1),
       speed: -2,
     });
+    this.audio = new Audio("src/assets/hit-sound.wav");
+    this.audioPlayButton = document.createElement("div");
+    this.audioPlayButton.addEventListener("click", () => this.audio?.play());
 
     return this;
   }
@@ -53,6 +60,20 @@ class App {
       this.collisionCount += 1;
       countNumberElement.innerText = this.collisionCount.toString();
       this.smallSquare.speed *= -1;
+      this.audioPlayButton!.click();
+
+      // console.log({
+      //   smallSquare: {
+      //     startX: this.smallSquare.startX,
+      //     startY: this.smallSquare.startY,
+      //     speed: this.smallSquare.speed,
+      //   },
+      //   largeSquare: {
+      //     startX: this.largeSquare.startX,
+      //     startY: this.largeSquare.startY,
+      //     speed: this.largeSquare.speed,
+      //   },
+      // });
     }
 
     // detect collision with each other
@@ -60,6 +81,7 @@ class App {
       // console.log("squares collided with each other");
       this.collisionCount += 1;
       countNumberElement.innerText = this.collisionCount.toString();
+      this.audioPlayButton!.click();
 
       const initialLargeSquareSpeed = this.largeSquare.speed;
       const initialSmallSquareSpeed = this.smallSquare.speed;
@@ -77,21 +99,22 @@ class App {
         ((this.smallSquare.weight - this.largeSquare.weight) / (this.smallSquare.weight + this.largeSquare.weight)) *
           initialSmallSquareSpeed;
 
-      console.log({
-        smallSquare: {
-          startX: this.smallSquare.startX,
-          startY: this.smallSquare.startY,
-        },
-        largeSquare: {
-          startX: this.largeSquare.startX,
-          startY: this.largeSquare.startY,
-        },
-      });
+      // console.log({
+      //   smallSquare: {
+      //     startX: this.smallSquare.startX,
+      //     startY: this.smallSquare.startY,
+      //     speed: this.smallSquare.speed,
+      //   },
+      //   largeSquare: {
+      //     startX: this.largeSquare.startX,
+      //     startY: this.largeSquare.startY,
+      //     speed: this.largeSquare.speed,
+      //   },
+      // });
     }
 
-    this.smallSquare.startX += this.smallSquare.startX <= 0 && this.smallSquare.speed < 0 ? 0 : this.smallSquare.speed;
-    this.largeSquare.startX +=
-      this.largeSquare.startX <= this.smallSquare.width && this.largeSquare.speed < 0 ? 0 : this.largeSquare.speed;
+    this.smallSquare.startX += this.smallSquare.speed;
+    this.largeSquare.startX += this.largeSquare.speed;
 
     // if (
     //   this.smallSquare!.speed > this.largeSquare!.speed &&
@@ -106,6 +129,11 @@ class App {
     this.canvasElement.style.width = "200px";
   }
 
+  setDigitsOfPi(value: number) {
+    this.digitsOfPi = value;
+    return this;
+  }
+
   draw() {
     const appRef = this;
     appRef.canvas2dCtx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
@@ -115,7 +143,7 @@ class App {
         throw new Error("small or large square undefined");
       }
 
-      appRef.canvas2dCtx.strokeStyle = "#080840";
+      appRef.canvas2dCtx.strokeStyle = "#01012cff";
       [appRef.largeSquare, appRef.smallSquare].forEach((square) =>
         appRef.canvas2dCtx.strokeRect(square.startX, square.startY, square.width, square.height)
       );
@@ -133,23 +161,19 @@ class App {
   }
 
   start() {
-    const weight1Elem = document.querySelector("#weight1")! satisfies HTMLSpanElement;
-    const weight2Elem = document.querySelector("#weight2")! satisfies HTMLSpanElement;
-
-    weight1Elem.innerText = new Intl.NumberFormat("en").format(this.largeSquare?.weight ?? 0).toString() + " kg";
-    weight2Elem.innerText = new Intl.NumberFormat("en").format(this.smallSquare?.weight ?? 0).toString() + " kg";
-
     this.renderLoop();
   }
 }
 
-const app = new App(document.querySelector("canvas#canvas")! satisfies HTMLCanvasElement).init({
-  canvasHeight: 450,
-  canvasWidth: 800,
-});
-
 startButton.addEventListener("click", () => {
-  app.start();
+  new App(document.querySelector("canvas#canvas")! satisfies HTMLCanvasElement)
+    .setDigitsOfPi(Number(digitsOfPiElem.value) <= 0 ? 1 : Number(digitsOfPiElem.value))
+    .init({
+      canvasHeight: 450,
+      canvasWidth: 800,
+    })
+    .start();
+
   startButton.setAttribute("disabled", "true");
   startButton.style.opacity = "0.5";
   startButton.style.cursor = "context-menu";
