@@ -27,7 +27,7 @@ div.click-count {
 
 canvas {
   height: 600px;
-  /* aspect-ratio: 16/9; */
+  aspect-ratio: 16/9;
   border: 2px solid #101010;
   border-right: none;
 }
