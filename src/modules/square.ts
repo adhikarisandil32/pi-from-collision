@@ -5,8 +5,6 @@ export class Square {
   public width: number;
   public weight: number;
   public speed: number;
-  public endX: number;
-  public endY: number;
 
   constructor({
     startX,
@@ -24,8 +22,6 @@ export class Square {
     this.startX = startX;
     this.startY = startY;
     this.height = this.width = width;
-    this.endX = this.startX + this.width;
-    this.endY = this.startY + this.height;
     this.weight = weight;
     this.speed = speed ?? 1;
   }
