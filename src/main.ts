@@ -2,6 +2,7 @@ import { Square } from "./modules/square";
 
 const countNumberElement = document.querySelector("#count-number")! as HTMLSpanElement;
 const startButton = document.querySelector("#click-button")! as HTMLButtonElement;
+const digitsOfPiElem = document.querySelector("#number-of-digits")! as HTMLInputElement;
 
 interface CanvasDetail {
   canvasHeight: number;
@@ -16,13 +17,12 @@ class App {
   public canvasElement: HTMLCanvasElement;
   public canvas2dCtx: CanvasRenderingContext2D;
   public collisionCount: number;
-  public digitsOfPi: number;
+  public digitsOfPi: number = 2;
 
   constructor(canvasElement: HTMLCanvasElement) {
     this.canvasElement = canvasElement;
     this.canvas2dCtx = this.canvasElement.getContext("2d")!;
     this.collisionCount = 0;
-    this.digitsOfPi = 2;
   }
 
   init({ canvasHeight, canvasWidth }: CanvasDetail) {
@@ -36,7 +36,7 @@ class App {
       speed: 0,
     });
     this.largeSquare = new Square({
-      startX: Math.floor(this.canvasElement.width),
+      startX: Math.floor(this.canvasElement.width / 2),
       startY: this.canvasElement.height - 100,
       width: 100,
       weight: Math.pow(100, this.digitsOfPi - 1),
@@ -129,6 +129,11 @@ class App {
     this.canvasElement.style.width = "200px";
   }
 
+  setDigitsOfPi(value: number) {
+    this.digitsOfPi = value;
+    return this;
+  }
+
   draw() {
     const appRef = this;
     appRef.canvas2dCtx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
@@ -156,23 +161,19 @@ class App {
   }
 
   start() {
-    const weight1Elem = document.querySelector("#weight1")! satisfies HTMLSpanElement;
-    const weight2Elem = document.querySelector("#weight2")! satisfies HTMLSpanElement;
-
-    weight1Elem.innerText = new Intl.NumberFormat("en").format(this.largeSquare?.weight ?? 0).toString() + " kg";
-    weight2Elem.innerText = new Intl.NumberFormat("en").format(this.smallSquare?.weight ?? 0).toString() + " kg";
-
     this.renderLoop();
   }
 }
 
-const app = new App(document.querySelector("canvas#canvas")! satisfies HTMLCanvasElement).init({
-  canvasHeight: 450,
-  canvasWidth: 800,
-});
-
 startButton.addEventListener("click", () => {
-  app.start();
+  new App(document.querySelector("canvas#canvas")! satisfies HTMLCanvasElement)
+    .setDigitsOfPi(Number(digitsOfPiElem.value) <= 0 ? 1 : Number(digitsOfPiElem.value))
+    .init({
+      canvasHeight: 450,
+      canvasWidth: 800,
+    })
+    .start();
+
   startButton.setAttribute("disabled", "true");
   startButton.style.opacity = "0.5";
   startButton.style.cursor = "context-menu";
